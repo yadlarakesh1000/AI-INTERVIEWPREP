@@ -1,9 +1,7 @@
 package com.interviewprep.security;
 
 import java.io.IOException;
-import java.util.Collections;
 
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -27,10 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
-
-    // UserDetailsService does not exist until STEP 009. ObjectProvider resolves it
-    // lazily and never fails at startup when no bean is present.
-    private final ObjectProvider<UserDetailsService> userDetailsServiceProvider;
+    private final UserDetailsService userDetailsService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
@@ -39,7 +34,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String token = resolveToken(request);
             if (token != null && jwtTokenProvider.validateToken(token)) {
                 String email = jwtTokenProvider.getEmailFromToken(token);
-                UsernamePasswordAuthenticationToken authentication = buildAuthentication(email);
+                UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+                UsernamePasswordAuthenticationToken authentication =
+                        new UsernamePasswordAuthenticationToken(
+                                userDetails, null, userDetails.getAuthorities());
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
@@ -51,18 +49,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
-    }
-
-    private UsernamePasswordAuthenticationToken buildAuthentication(String email) {
-        UserDetailsService userDetailsService = userDetailsServiceProvider.getIfAvailable();
-        if (userDetailsService != null) {
-            UserDetails userDetails = userDetailsService.loadUserByUsername(email);
-            return new UsernamePasswordAuthenticationToken(
-                    userDetails, null, userDetails.getAuthorities());
-        }
-        // Fallback until CustomUserDetailsService exists: authenticate with the email
-        // principal and no granted authorities (there are no roles in this app).
-        return new UsernamePasswordAuthenticationToken(email, null, Collections.emptyList());
     }
 
     private String resolveToken(HttpServletRequest request) {
