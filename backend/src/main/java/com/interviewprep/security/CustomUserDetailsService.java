@@ -1,13 +1,11 @@
 package com.interviewprep.security;
 
-import java.util.Collections;
-
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import com.interviewprep.modules.auth.entity.User;
 import com.interviewprep.modules.auth.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -20,10 +18,11 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        com.interviewprep.modules.auth.entity.User user = userRepository.findByEmail(email)
+        User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
 
+        // UserPrincipal carries the userId so it is available from the SecurityContext.
         // No roles in this application (Section 10) — authorities list is empty.
-        return new User(user.getEmail(), user.getPassword(), Collections.emptyList());
+        return new UserPrincipal(user.getId(), user.getEmail(), user.getPassword());
     }
 }

@@ -17,6 +17,8 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import com.interviewprep.common.ApiResponse;
 import com.interviewprep.modules.auth.exception.AuthException;
+import com.interviewprep.modules.profile.exception.ProfileException;
+import com.interviewprep.modules.resume.exception.ResumeException;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -42,6 +44,20 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Object>> handleUnauthorized(UnauthorizedException ex) {
         log.warn("Unauthorized: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(ProfileException.class)
+    public ResponseEntity<ApiResponse<Object>> handleProfileException(ProfileException ex) {
+        log.warn("Profile error: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(ResumeException.class)
+    public ResponseEntity<ApiResponse<Object>> handleResumeException(ResumeException ex) {
+        log.warn("Resume error: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(ApiResponse.error(ex.getMessage()));
     }
 
