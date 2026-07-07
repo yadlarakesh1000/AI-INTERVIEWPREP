@@ -17,6 +17,7 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import com.interviewprep.common.ApiResponse;
 import com.interviewprep.modules.auth.exception.AuthException;
+import com.interviewprep.modules.interview.exception.InterviewException;
 import com.interviewprep.modules.profile.exception.ProfileException;
 import com.interviewprep.modules.resume.exception.ResumeException;
 
@@ -57,6 +58,13 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ResumeException.class)
     public ResponseEntity<ApiResponse<Object>> handleResumeException(ResumeException ex) {
         log.warn("Resume error: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(InterviewException.class)
+    public ResponseEntity<ApiResponse<Object>> handleInterviewException(InterviewException ex) {
+        log.warn("Interview error: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(ApiResponse.error(ex.getMessage()));
     }

@@ -1,5 +1,7 @@
 package com.interviewprep.modules.ai.service;
 
+import java.util.List;
+
 import com.interviewprep.modules.ai.dto.EvaluationResult;
 
 /**
@@ -23,4 +25,15 @@ public interface AnswerEvaluationService {
                                     String answer,
                                     String interviewType,
                                     String difficulty);
+
+    /**
+     * Generates 3-5 specific, actionable improvement suggestions for the candidate by sending
+     * all of an interview's evaluation results to the LLM (Section 15). Returns an empty list
+     * if there are no evaluations, and degrades gracefully to feedback-derived suggestions if
+     * the LLM call fails.
+     *
+     * @param evaluations the per-question evaluation results from the interview
+     * @return a list of improvement suggestion strings
+     */
+    List<String> generateImprovementSuggestions(List<EvaluationResult> evaluations);
 }

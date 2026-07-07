@@ -50,6 +50,7 @@ public class InterviewSessionServiceImpl implements InterviewSessionService {
                 .totalQuestions(totalQuestions)
                 .currentQuestionNumber(0)
                 .history(new ArrayList<>())
+                .askedQuestionIds(new ArrayList<>())
                 .resumeData(resumeData)
                 .csTopic(csTopic)
                 .startedAt(LocalDateTime.now())
@@ -68,6 +69,14 @@ public class InterviewSessionServiceImpl implements InterviewSessionService {
             throw new ResourceNotFoundException("InterviewSession", "sessionId", sessionId);
         }
         return session;
+    }
+
+    @Override
+    public InterviewSession getByInterviewId(Long interviewId) {
+        return activeSessions.values().stream()
+                .filter(session -> interviewId != null && interviewId.equals(session.getInterviewId()))
+                .findFirst()
+                .orElseThrow(() -> new ResourceNotFoundException("InterviewSession", "interviewId", interviewId));
     }
 
     @Override

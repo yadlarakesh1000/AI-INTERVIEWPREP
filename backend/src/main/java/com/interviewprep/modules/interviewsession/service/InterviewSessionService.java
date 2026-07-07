@@ -19,6 +19,12 @@ public interface InterviewSessionService {
 
     InterviewSession getSession(String sessionId);
 
+    /**
+     * Finds the active session for a DB interview id. The answer/end endpoints are keyed by
+     * interviewId (Section 8.4), so this locates the in-memory session from that id.
+     */
+    InterviewSession getByInterviewId(Long interviewId);
+
     void updateSession(String sessionId, InterviewSession session);
 
     void destroySession(String sessionId);

@@ -33,6 +33,7 @@ public class InterviewSession {
     private int totalQuestions;
     private int currentQuestionNumber;
     private List<QAPair> history;         // all Q&A pairs so far (for follow-up context)
+    private List<Long> askedQuestionIds;  // ids of HR bank questions already asked (repeat avoidance)
     private ResumeData resumeData;        // null unless RESUME_BASED
     private String csTopic;               // null unless CS_FUNDAMENTALS
     private LocalDateTime startedAt;
