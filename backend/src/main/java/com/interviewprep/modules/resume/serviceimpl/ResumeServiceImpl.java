@@ -13,8 +13,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.interviewprep.exception.BadRequestException;
 import com.interviewprep.exception.ResourceNotFoundException;
+import com.interviewprep.modules.ai.dto.ResumeData;
+import com.interviewprep.modules.ai.service.ResumeParsingService;
 import com.interviewprep.modules.auth.entity.User;
 import com.interviewprep.modules.auth.repository.UserRepository;
 import com.interviewprep.modules.resume.dto.ResumeResponseDto;
@@ -37,6 +41,8 @@ public class ResumeServiceImpl implements ResumeService {
     private final ResumeRepository resumeRepository;
     private final UserRepository userRepository;
     private final ResumeMapper resumeMapper;
+    private final ResumeParsingService resumeParsingService;
+    private final ObjectMapper objectMapper;
 
     @Value("${app.resume.upload-dir}")
     private String uploadDir;
@@ -55,17 +61,23 @@ public class ResumeServiceImpl implements ResumeService {
         String storedPath = storeFile(file, userId, storedName);
         String extractedText = extractText(file);
 
+        // Structure the extracted text into skills/projects/experience via the AI parser,
+        // then persist it as a JSON string. Parsing degrades gracefully to empty data, so a
+        // parsing failure never blocks the upload.
+        ResumeData parsedData = resumeParsingService.parseResumeText(extractedText);
+        String parsedJson = toJson(parsedData);
+
         Resume resume = Resume.builder()
                 .user(user)
                 .fileName(originalName)
                 .filePath(storedPath)
                 .extractedText(extractedText)
-                .parsedData(null) // populated by the AI parsing service in STEP 019
+                .parsedData(parsedJson)
                 .build();
 
         Resume saved = resumeRepository.save(resume);
-        log.info("Uploaded resume id={} for userId={} ({} chars extracted)",
-                saved.getId(), userId, extractedText == null ? 0 : extractedText.length());
+        log.info("Uploaded resume id={} for userId={} ({} chars extracted, parsed={})",
+                saved.getId(), userId, extractedText == null ? 0 : extractedText.length(), parsedJson != null);
 
         return resumeMapper.toDto(saved);
     }
@@ -114,6 +126,18 @@ public class ResumeServiceImpl implements ResumeService {
         } catch (IOException ex) {
             log.error("Failed to extract text from resume PDF", ex);
             throw new ResumeException("Could not read the PDF file. Please upload a valid PDF.", ex);
+        }
+    }
+
+    private String toJson(ResumeData data) {
+        if (data == null) {
+            return null;
+        }
+        try {
+            return objectMapper.writeValueAsString(data);
+        } catch (JsonProcessingException ex) {
+            log.error("Failed to serialize parsed resume data to JSON", ex);
+            return null;
         }
     }
 
