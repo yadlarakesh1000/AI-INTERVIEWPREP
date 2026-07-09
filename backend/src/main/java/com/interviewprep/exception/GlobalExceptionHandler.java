@@ -20,6 +20,7 @@ import com.interviewprep.modules.auth.exception.AuthException;
 import com.interviewprep.modules.interview.exception.InterviewException;
 import com.interviewprep.modules.profile.exception.ProfileException;
 import com.interviewprep.modules.resume.exception.ResumeException;
+import com.interviewprep.modules.roadmap.exception.RoadmapException;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -65,6 +66,13 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(InterviewException.class)
     public ResponseEntity<ApiResponse<Object>> handleInterviewException(InterviewException ex) {
         log.warn("Interview error: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(RoadmapException.class)
+    public ResponseEntity<ApiResponse<Object>> handleRoadmapException(RoadmapException ex) {
+        log.warn("Roadmap error: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(ApiResponse.error(ex.getMessage()));
     }
