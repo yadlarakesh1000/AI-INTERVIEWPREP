@@ -28,7 +28,6 @@ function App() {
           <Route path="/profile-setup" element={<ProfileSetupPage />} />
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/interviews/setup" element={<InterviewSetupPage />} />
-          <Route path="/interviews/:id" element={<InterviewPage />} />
           <Route path="/interviews/:id/result" element={<InterviewResultPage />} />
           <Route path="/resume/upload" element={<ResumeUploadPage />} />
           <Route path="/roadmaps" element={<RoadmapListPage />} />
@@ -37,6 +36,12 @@ function App() {
           <Route path="/recommendations" element={<SkillRecommendationPage />} />
           <Route path="/analytics" element={<AnalyticsPage />} />
           <Route path="/history" element={<HistoryPage />} />
+        </Route>
+
+        {/* The live interview renders full-screen without the app shell
+            (Section 12: clean, focused layout — no distracting navigation) */}
+        <Route element={<ProtectedRoute layout={false} />}>
+          <Route path="/interviews/:id" element={<InterviewPage />} />
         </Route>
 
         {/* Default and unknown routes */}

@@ -5,11 +5,17 @@ import Sidebar from './Sidebar';
 
 // Layout route for authenticated pages: bounces to /login when not
 // authenticated, otherwise renders the app shell around the child route.
-const ProtectedRoute = () => {
+// Pass layout={false} for focused full-screen pages (the live interview)
+// that must render without the navbar/sidebar per Section 12.
+const ProtectedRoute = ({ layout = true }) => {
   const { isAuthenticated } = useAuth();
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
+  }
+
+  if (!layout) {
+    return <Outlet />;
   }
 
   return (
