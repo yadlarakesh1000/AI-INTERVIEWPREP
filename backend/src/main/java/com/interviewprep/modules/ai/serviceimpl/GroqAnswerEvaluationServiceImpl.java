@@ -201,12 +201,16 @@ public class GroqAnswerEvaluationServiceImpl implements AnswerEvaluationService 
                 3. Depth / Technical Accuracy - How correct and specific was the content?
                 4. Confidence & Fluency - Based on the transcript, assess filler words, hesitation, pacing.
 
+                Score strictly based on the candidate's actual answer above — do NOT reuse any
+                example or template values. Use the full range: excellent answers deserve 8-10,
+                mediocre answers 4-7, and empty or irrelevant answers 1-2.
+
                 Respond in this exact JSON format (no markdown, no backticks):
                 {
-                    "relevance": {"score": 8, "feedback": "..."},
-                    "clarityAndStructure": {"score": 7, "feedback": "..."},
-                    "depthAndAccuracy": {"score": 6, "feedback": "..."},
-                    "confidenceAndFluency": {"score": 7, "feedback": "..."}
+                    "relevance": {"score": <Integer 1-10>, "feedback": "..."},
+                    "clarityAndStructure": {"score": <Integer 1-10>, "feedback": "..."},
+                    "depthAndAccuracy": {"score": <Integer 1-10>, "feedback": "..."},
+                    "confidenceAndFluency": {"score": <Integer 1-10>, "feedback": "..."}
                 }""".formatted(
                 nullSafe(question),
                 nullSafe(answer),
@@ -235,7 +239,11 @@ public class GroqAnswerEvaluationServiceImpl implements AnswerEvaluationService 
                 .confidenceScore(confidenceScore)
                 .build();
 
-        log.debug("Parsed evaluation: overall={}, confidence={}", overallScore, confidenceScore);
+        // INFO so score anomalies (e.g. the model copying template values) are
+        // visible in the standard log without enabling debug logging.
+        log.info("Parsed evaluation: relevance={}, clarity={}, depth={}, fluency={} -> overall={}, confidence={}",
+                relevance.getScore(), clarity.getScore(), depth.getScore(), confidence.getScore(),
+                overallScore, confidenceScore);
         return result;
     }
 
