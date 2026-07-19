@@ -77,7 +77,9 @@ const DashboardPage = () => {
   }
 
   // Section 12: if the user has no profile yet, send them to profile setup.
-  if (profileMissing) {
+  // Requires that we also have no cached profile, so this stays mutually
+  // exclusive with ProfileSetupPage's redirect back to the dashboard.
+  if (profileMissing && !profileRes?.data) {
     return <Navigate to="/profile-setup" replace />;
   }
 

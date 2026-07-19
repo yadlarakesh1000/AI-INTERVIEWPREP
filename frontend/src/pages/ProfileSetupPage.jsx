@@ -25,7 +25,11 @@ const ProfileSetupPage = () => {
   const navigate = useNavigate();
 
   // If the user already has a profile, this page has nothing to do.
-  const { data: existingProfile, isLoading: checkingProfile } = useQuery({
+  const {
+    data: existingProfile,
+    isLoading: checkingProfile,
+    isError: profileMissing,
+  } = useQuery({
     queryKey: ['profile'],
     queryFn: () => get('/profile'),
     retry: false,
@@ -44,7 +48,11 @@ const ProfileSetupPage = () => {
     return <LoadingSpinner message="Checking your profile..." />;
   }
 
-  if (existingProfile?.data) {
+  // Only redirect when the profile fetch genuinely succeeded. Checking the
+  // error state too keeps this mutually exclusive with DashboardPage's
+  // redirect back here — otherwise a stale cache hit plus a failed background
+  // refetch bounces the user between the two pages forever.
+  if (!profileMissing && existingProfile?.data) {
     return <Navigate to="/dashboard" replace />;
   }
 
