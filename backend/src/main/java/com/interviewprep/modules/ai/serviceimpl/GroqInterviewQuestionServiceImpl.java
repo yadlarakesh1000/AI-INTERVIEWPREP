@@ -73,13 +73,15 @@ public class GroqInterviewQuestionServiceImpl implements InterviewQuestionServic
             if (medium && history != null && !history.isEmpty()) {
                 return buildHrFollowUpPrompt(history.get(history.size() - 1));
             }
-            return buildHrEasyPrompt();
+            return buildHrEasyPrompt() + alreadyAskedClause(history);
         }
         if (TYPE_RESUME.equals(type)) {
-            return buildResumePrompt(difficulty, resumeData);
+            return buildResumePrompt(difficulty, resumeData) + alreadyAskedClause(history)
+                    + followUpClause(medium, history, "the project, skill, or experience they just described");
         }
         if (TYPE_CS.equals(type)) {
-            return buildCsPrompt(difficulty, topic);
+            return buildCsPrompt(difficulty, topic) + alreadyAskedClause(history)
+                    + followUpClause(medium, history, "the reasoning in their previous answer, testing edge cases");
         }
         // Unknown type — fall back to a generic HR question rather than failing the interview.
         log.warn("Unknown interview type '{}', defaulting to HR prompt", interviewType);
@@ -117,6 +119,51 @@ public class GroqInterviewQuestionServiceImpl implements InterviewQuestionServic
                 Generate a personalized interview question about their background, projects, or technical skills.
                 Difficulty: %s
                 Return ONLY the question text, nothing else.""".formatted(skills, projects, experience, safeDifficulty(difficulty));
+    }
+
+    /**
+     * Lists the questions already asked this session so the model does not repeat itself.
+     * Without this the model reliably returns the same canonical question (e.g. "the four
+     * principles of OOP") every turn, since each call is otherwise stateless.
+     */
+    private String alreadyAskedClause(List<QAPair> history) {
+        if (history == null || history.isEmpty()) {
+            return "";
+        }
+        String asked = history.stream()
+                .map(QAPair::getQuestion)
+                .filter(q -> q != null && !q.isBlank())
+                .map(q -> "- " + q)
+                .collect(Collectors.joining("\n"));
+        if (asked.isBlank()) {
+            return "";
+        }
+        return """
+
+                You have ALREADY asked the following questions in this interview:
+                %s
+                Ask about a clearly different aspect. Do NOT repeat or rephrase any question above."""
+                .formatted(asked);
+    }
+
+    /**
+     * Medium difficulty follow-ups (Section 15): the next question should build on what the
+     * candidate actually said, not just restate the topic.
+     */
+    private String followUpClause(boolean medium, List<QAPair> history, String focus) {
+        if (!medium || history == null || history.isEmpty()) {
+            return "";
+        }
+        QAPair previous = history.get(history.size() - 1);
+        String previousAnswer = previous.getAnswer() == null ? "" : previous.getAnswer().trim();
+        if (previousAnswer.isBlank()) {
+            return "";
+        }
+        return """
+
+                The candidate's most recent answer was: "%s"
+                Generate a natural follow-up question that goes deeper into %s."""
+                .formatted(previousAnswer, focus);
     }
 
     private String buildCsPrompt(String difficulty, String topic) {

@@ -244,8 +244,10 @@ public class InterviewServiceImpl implements InterviewService {
             return pickHrQuestion(session);
         }
 
-        // RESUME_BASED or CS_FUNDAMENTALS
-        List<QAPair> context = (medium && !isFirst) ? session.getHistory() : List.of();
+        // RESUME_BASED or CS_FUNDAMENTALS. Always pass the history: Medium uses it to
+        // follow up on the previous answer, and every difficulty uses it to avoid asking
+        // the same question twice (Section 15). The question service decides which.
+        List<QAPair> context = isFirst ? List.of() : session.getHistory();
         return interviewQuestionService.generateQuestion(
                 type, session.getDifficulty(), session.getCsTopic(), context, session.getResumeData());
     }
