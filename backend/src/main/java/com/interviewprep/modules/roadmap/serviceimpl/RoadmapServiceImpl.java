@@ -65,15 +65,25 @@ public class RoadmapServiceImpl implements RoadmapService {
             userRoadmapRepository.save(existing);
         });
 
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+        // Re-selecting a roadmap the user picked before reactivates that selection so their
+        // existing day-by-day progress is resumed rather than abandoned.
+        UserRoadmap userRoadmap = userRoadmapRepository
+                .findByUserIdAndRoadmapTemplateIdOrderByIdAsc(userId, template.getId())
+                .stream().findFirst().orElse(null);
 
-        UserRoadmap userRoadmap = UserRoadmap.builder()
-                .user(user)
-                .roadmapTemplate(template)
-                .selectedDurationWeeks(request.getSelectedDurationWeeks())
-                .isActive(true)
-                .build();
+        if (userRoadmap == null) {
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+            userRoadmap = UserRoadmap.builder()
+                    .user(user)
+                    .roadmapTemplate(template)
+                    .selectedDurationWeeks(request.getSelectedDurationWeeks())
+                    .isActive(true)
+                    .build();
+        } else {
+            userRoadmap.setSelectedDurationWeeks(request.getSelectedDurationWeeks());
+            userRoadmap.setIsActive(true);
+        }
         userRoadmapRepository.save(userRoadmap);
 
         log.info("User {} selected roadmap template {} ({} weeks)",
